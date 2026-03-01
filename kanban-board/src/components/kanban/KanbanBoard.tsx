@@ -34,7 +34,7 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
   // ✅ Ez az új sor — szinkronizálja a state-et ha a board frissül
   useEffect(() => {
     setColumns(board.columns);
-  }, [board]);
+  }, [JSON.stringify(board.columns)]);
 
   // Dialog states
   const [cardFormOpen, setCardFormOpen] = useState(false);

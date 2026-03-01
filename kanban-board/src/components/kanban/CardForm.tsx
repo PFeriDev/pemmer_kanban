@@ -5,20 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { TagChip } from "@/components/widgets/TagChip";
 import type { Card, Tag, Priority, CreateCardInput, UpdateCardInput } from "@/types";
 import { PRIORITY_CONFIG } from "@/lib/utils";
@@ -32,14 +20,7 @@ interface CardFormProps {
   availableTags: Tag[];
 }
 
-export function CardForm({
-  open,
-  onClose,
-  onSave,
-  card,
-  columnId,
-  availableTags,
-}: CardFormProps) {
+export function CardForm({ open, onClose, onSave, card, columnId, availableTags }: CardFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
@@ -52,19 +33,13 @@ export function CardForm({
       setTitle(card?.title ?? "");
       setDescription(card?.description ?? "");
       setPriority(card?.priority ?? "MEDIUM");
-      setDueDate(
-        card?.dueDate
-          ? new Date(card.dueDate).toISOString().slice(0, 10)
-          : ""
-      );
+      setDueDate(card?.dueDate ? new Date(card.dueDate).toISOString().slice(0, 10) : "");
       setSelectedTagIds(card?.tags?.map((t) => t.id) ?? []);
     }
   }, [open, card]);
 
   const toggleTag = (tagId: string) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
+    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   };
 
   const handleSave = async () => {
@@ -130,9 +105,7 @@ export function CardForm({
                   {(Object.keys(PRIORITY_CONFIG) as Priority[]).map((p) => (
                     <SelectItem key={p} value={p}>
                       <span className="flex items-center gap-2">
-                        <span
-                          className={`h-2 w-2 rounded-full ${PRIORITY_CONFIG[p].dot}`}
-                        />
+                        <span className={`h-2 w-2 rounded-full ${PRIORITY_CONFIG[p].dot}`} />
                         {PRIORITY_CONFIG[p].label}
                       </span>
                     </SelectItem>
@@ -143,12 +116,7 @@ export function CardForm({
 
             <div className="space-y-1.5">
               <Label htmlFor="card-due">Határidő</Label>
-              <Input
-                id="card-due"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+              <Input id="card-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
           </div>
 
@@ -165,12 +133,7 @@ export function CardForm({
                     className={`transition-opacity ${
                       selectedTagIds.includes(tag.id) ? "opacity-100 ring-2 ring-offset-1" : "opacity-50"
                     } rounded-full`}
-                    style={
-                      selectedTagIds.includes(tag.id)
-                        ? { ringColor: tag.color }
-                        : undefined
-                    }
-                  >
+                    style={selectedTagIds.includes(tag.id) ? { borderColor: tag.color } : undefined}>
                     <TagChip tag={tag} />
                   </button>
                 ))}
