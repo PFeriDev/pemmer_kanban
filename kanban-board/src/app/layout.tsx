@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto, JetBrains_Mono } from "next/font/google";
+import { AppNav } from "@/components/layout/AppNav";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -13,18 +14,19 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kanban Board",
-  description: "Lokális kanban projekt menedzser",
+  title: "Családi App",
+  description: "Kanban, személyek, jegyzetek, naptár, galéria",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="hu" suppressHydrationWarning>
-      <body className={`${roboto.variable} ${jetbrainsMono.variable} antialiased`}>{children}</body>
+      <body className={`${roboto.variable} ${jetbrainsMono.variable} antialiased`}>
+        <AppNav />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }

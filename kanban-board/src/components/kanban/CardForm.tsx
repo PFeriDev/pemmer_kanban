@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { TagChip } from "@/components/widgets/TagChip";
-import type { Card, Tag, Priority, CreateCardInput, UpdateCardInput } from "@/types";
+import { User } from "lucide-react";
+import type { Card, Tag, Person, Priority, CreateCardInput, UpdateCardInput } from "@/types";
 import { PRIORITY_CONFIG } from "@/lib/utils";
 
 interface CardFormProps {
@@ -26,7 +31,13 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
   const [priority, setPriority] = useState<Priority>("MEDIUM");
   const [dueDate, setDueDate] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/persons").then((r) => r.json()).then(setPersons);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -35,12 +46,15 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
       setPriority(card?.priority ?? "MEDIUM");
       setDueDate(card?.dueDate ? new Date(card.dueDate).toISOString().slice(0, 10) : "");
       setSelectedTagIds(card?.tags?.map((t) => t.id) ?? []);
+      setSelectedAssigneeIds(card?.assignees?.map((a) => a.id) ?? []);
     }
   }, [open, card]);
 
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
-  };
+  const toggleTag = (id: string) =>
+    setSelectedTagIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const toggleAssignee = (id: string) =>
+    setSelectedAssigneeIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -52,6 +66,7 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
         priority,
         dueDate: dueDate || null,
         tagIds: selectedTagIds,
+        assigneeIds: selectedAssigneeIds,
         ...(columnId && !card ? { columnId } : {}),
       };
       await onSave(data as CreateCardInput | UpdateCardInput);
@@ -67,40 +82,22 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
         <DialogHeader>
           <DialogTitle>{card ? "Kártya szerkesztése" : "Új kártya"}</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4 py-2">
-          {/* Title */}
           <div className="space-y-1.5">
-            <Label htmlFor="card-title">Cím *</Label>
-            <Input
-              id="card-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Kártya neve..."
-              onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            />
+            <Label>Cím *</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Kártya neve..."
+              onKeyDown={(e) => e.key === "Enter" && handleSave()} />
           </div>
-
-          {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="card-desc">Leírás</Label>
-            <Textarea
-              id="card-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Részletek, megjegyzések..."
-              rows={3}
-            />
+            <Label>Leírás</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)}
+              placeholder="Részletek..." rows={3} />
           </div>
-
-          {/* Priority + Due date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Prioritás</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(PRIORITY_CONFIG) as Priority[]).map((p) => (
                     <SelectItem key={p} value={p}>
@@ -113,12 +110,36 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="card-due">Határidő</Label>
-              <Input id="card-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <Label>Határidő</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
           </div>
+
+          {/* Assignees */}
+          {persons.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Felelősök</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {persons.map((person) => {
+                  const selected = selectedAssigneeIds.includes(person.id);
+                  return (
+                    <button key={person.id} type="button" onClick={() => toggleAssignee(person.id)}
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
+                        selected ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                      }`}>
+                      {person.avatarUrl ? (
+                        <img src={person.avatarUrl} alt={person.name} className="h-4 w-4 rounded-full object-cover" />
+                      ) : (
+                        <User className="h-3.5 w-3.5" />
+                      )}
+                      {person.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Tags */}
           {availableTags.length > 0 && (
@@ -126,14 +147,8 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
               <Label>Címkék</Label>
               <div className="flex flex-wrap gap-1.5">
                 {availableTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag.id)}
-                    className={`transition-opacity ${
-                      selectedTagIds.includes(tag.id) ? "opacity-100 ring-2 ring-offset-1" : "opacity-50"
-                    } rounded-full`}
-                    style={selectedTagIds.includes(tag.id) ? { borderColor: tag.color } : undefined}>
+                  <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
+                    className={`transition-opacity rounded-full ${selectedTagIds.includes(tag.id) ? "opacity-100 ring-2 ring-offset-1" : "opacity-50"}`}>
                     <TagChip tag={tag} />
                   </button>
                 ))}
@@ -141,11 +156,8 @@ export function CardForm({ open, onClose, onSave, card, columnId, availableTags 
             </div>
           )}
         </div>
-
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Mégse
-          </Button>
+          <Button variant="outline" onClick={onClose}>Mégse</Button>
           <Button onClick={handleSave} disabled={!title.trim() || saving}>
             {saving ? "Mentés..." : card ? "Mentés" : "Létrehozás"}
           </Button>

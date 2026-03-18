@@ -8,16 +8,18 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const column = await prisma.column.update({
+    const note = await prisma.note.update({
       where: { id },
       data: {
-        ...(body.title && { title: body.title }),
-        ...(body.color && { color: body.color }),
+        ...(body.title !== undefined && { title: body.title }),
+        ...(body.content !== undefined && { content: body.content }),
+        ...(body.personId !== undefined && { personId: body.personId }),
       },
+      include: { person: true },
     });
-    return NextResponse.json(column);
+    return NextResponse.json(note);
   } catch {
-    return NextResponse.json({ error: "Failed to update column" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update note" }, { status: 500 });
   }
 }
 
@@ -27,9 +29,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.column.delete({ where: { id } });
+    await prisma.note.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Failed to delete column" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete note" }, { status: 500 });
   }
 }

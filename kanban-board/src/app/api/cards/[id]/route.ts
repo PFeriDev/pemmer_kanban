@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     const body = await req.json();
@@ -11,14 +14,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         ...(body.title !== undefined && { title: body.title }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.priority !== undefined && { priority: body.priority }),
-        ...(body.dueDate !== undefined && {
-          dueDate: body.dueDate ? new Date(body.dueDate) : null,
-        }),
-        ...(body.tagIds !== undefined && {
-          tags: { set: body.tagIds.map((tagId: string) => ({ id: tagId })) },
-        }),
+        ...(body.dueDate !== undefined && { dueDate: body.dueDate ? new Date(body.dueDate) : null }),
+        ...(body.tagIds !== undefined && { tags: { set: body.tagIds.map((tagId: string) => ({ id: tagId })) } }),
+        ...(body.assigneeIds !== undefined && { assignees: { set: body.assigneeIds.map((assigneeId: string) => ({ id: assigneeId })) } }),
       },
-      include: { tags: true },
+      include: { tags: true, assignees: true },
     });
     return NextResponse.json(card);
   } catch {
@@ -26,7 +26,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     await prisma.card.delete({ where: { id } });

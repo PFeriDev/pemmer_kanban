@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -31,11 +31,6 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
   const [columns, setColumns] = useState<Column[]>(board.columns);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
 
-  // ✅ Ez az új sor — szinkronizálja a state-et ha a board frissül
-  useEffect(() => {
-    setColumns(board.columns);
-  }, [JSON.stringify(board.columns)]);
-
   // Dialog states
   const [cardFormOpen, setCardFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -44,7 +39,9 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
   const [columnFormOpen, setColumnFormOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   // ── Card CRUD ──────────────────────────────────────────────────────────────
 
@@ -62,12 +59,14 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
 
   const handleSaveCard = async (data: CreateCardInput | UpdateCardInput) => {
     if (editingCard) {
+      // Update
       await fetch(`/api/cards/${editingCard.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
     } else {
+      // Create
       await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +81,7 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
       prev.map((col) => ({
         ...col,
         cards: col.cards.filter((c) => c.id !== cardId),
-      })),
+      }))
     );
     await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
     onRefresh();
@@ -147,16 +146,24 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
     if (!isActiveCard) return;
 
     setColumns((cols) => {
-      const activeColIdx = cols.findIndex((c) => c.cards.some((card) => card.id === activeId));
+      const activeColIdx = cols.findIndex((c) =>
+        c.cards.some((card) => card.id === activeId)
+      );
       if (activeColIdx === -1) return cols;
 
       if (isOverCard) {
-        const overColIdx = cols.findIndex((c) => c.cards.some((card) => card.id === overId));
+        const overColIdx = cols.findIndex((c) =>
+          c.cards.some((card) => card.id === overId)
+        );
         if (overColIdx === -1) return cols;
 
         const newCols = cols.map((c) => ({ ...c, cards: [...c.cards] }));
-        const activeCardIdx = newCols[activeColIdx].cards.findIndex((c) => c.id === activeId);
-        const overCardIdx = newCols[overColIdx].cards.findIndex((c) => c.id === overId);
+        const activeCardIdx = newCols[activeColIdx].cards.findIndex(
+          (c) => c.id === activeId
+        );
+        const overCardIdx = newCols[overColIdx].cards.findIndex(
+          (c) => c.id === overId
+        );
         const [movedCard] = newCols[activeColIdx].cards.splice(activeCardIdx, 1);
         movedCard.columnId = newCols[overColIdx].id;
         newCols[overColIdx].cards.splice(overCardIdx, 0, movedCard);
@@ -168,7 +175,9 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
         if (overColIdx === -1 || activeColIdx === overColIdx) return cols;
 
         const newCols = cols.map((c) => ({ ...c, cards: [...c.cards] }));
-        const activeCardIdx = newCols[activeColIdx].cards.findIndex((c) => c.id === activeId);
+        const activeCardIdx = newCols[activeColIdx].cards.findIndex(
+          (c) => c.id === activeId
+        );
         const [movedCard] = newCols[activeColIdx].cards.splice(activeCardIdx, 1);
         movedCard.columnId = newCols[overColIdx].id;
         newCols[overColIdx].cards.push(movedCard);
@@ -184,12 +193,13 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
     const { active, over } = event;
     if (!over) return;
 
+    // Persist new order to DB
     const moves = columns.flatMap((col) =>
       col.cards.map((card, idx) => ({
         id: card.id,
         columnId: col.id,
         order: idx,
-      })),
+      }))
     );
 
     await fetch("/api/cards/move", {
@@ -206,7 +216,8 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}>
+        onDragEnd={handleDragEnd}
+      >
         <div className="flex h-full items-start gap-4 overflow-x-auto p-4 pb-8">
           {columns.map((column) => (
             <KanbanColumn
@@ -221,9 +232,11 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
             />
           ))}
 
+          {/* Add column button */}
           <button
             onClick={handleAddColumn}
-            className="flex h-12 w-72 flex-shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary hover:bg-primary/5">
+            className="flex h-12 w-72 flex-shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+          >
             <Plus className="h-4 w-4" />
             Oszlop hozzáadása
           </button>
@@ -232,7 +245,11 @@ export function KanbanBoard({ board, availableTags, onRefresh }: KanbanBoardProp
         <DragOverlay>
           {activeCard && (
             <div className="rotate-2 opacity-90">
-              <KanbanCard card={activeCard} onEdit={() => {}} onDelete={() => {}} />
+              <KanbanCard
+                card={activeCard}
+                onEdit={() => {}}
+                onDelete={() => {}}
+              />
             </div>
           )}
         </DragOverlay>

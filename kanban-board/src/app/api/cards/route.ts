@@ -13,11 +13,10 @@ export async function POST(req: Request) {
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         order: count,
         columnId: body.columnId,
-        tags: body.tagIds?.length
-          ? { connect: body.tagIds.map((id: string) => ({ id })) }
-          : undefined,
+        tags: body.tagIds?.length ? { connect: body.tagIds.map((id: string) => ({ id })) } : undefined,
+        assignees: body.assigneeIds?.length ? { connect: body.assigneeIds.map((id: string) => ({ id })) } : undefined,
       },
-      include: { tags: true },
+      include: { tags: true, assignees: true },
     });
     return NextResponse.json(card, { status: 201 });
   } catch {
